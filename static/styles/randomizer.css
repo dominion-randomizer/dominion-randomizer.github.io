@@ -1,0 +1,129 @@
+body {
+    font-family: Roboto,RobotoDraft,Helvetica,Arial,sans-serif;
+    min-width: 21rem;
+}
+
+#content {
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 0.3rem;
+}
+
+.container img {
+    margin: 0.1rem;
+}
+
+.card-container img {
+    width: 9.375rem;
+    height: 15rem;
+}
+
+.non-card-container img {
+    width: 15rem;
+    height: 9.375rem;
+}
+
+#set-select {
+    margin-bottom: 0.4rem;
+}
+
+input[list] {
+    margin-bottom: 0.4rem;
+}
+
+fieldset {
+    border: 0;
+    padding-bottom: 1rem;
+}
+
+fieldset :not(legend) {
+    font-size: 0.9em;
+}
+
+main {
+    max-width: 50rem;
+    margin: auto;
+}
+
+#randomize {
+    width: 21rem;
+    margin: 0 auto 1rem auto;
+}
+
+input[type='number'] {
+    width: 2.5em;
+}
+
+#amounts label {
+    margin-left: 0.2rem;
+    margin-right: 0.2rem;
+}
+
+#sets {
+    margin-left: 1rem;
+    margin-right: 1rem;
+}
+
+.set {
+    display: flex;
+    align-items: baseline;
+}
+
+.set:not(:last-child) {
+    margin-bottom: 0.3rem;
+}
+
+.set span {
+    flex-basis: 33.33%;
+    text-align: left;
+}
+
+.set label {
+    flex-basis: 33.33%;
+}
+
+.filtered-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    width: 13rem;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.filtered-card:not(:last-child) {
+    margin-bottom: 0.3rem;
+}
+
+#types {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    text-align: left;
+    padding-left: 1.5rem;
+}
+
+#types label {
+    flex-basis: 33.33%;
+}
+
+.spacer {
+    flex-grow: 1;
+}
+
+#error {
+    display: none;
+}
+
+/* removes datalist dropdown arrow.
+   via https://stackoverflow.com/a/20941546/1247781 */
+input::-webkit-calendar-picker-indicator {
+    display: none;
+}
