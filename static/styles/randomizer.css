@@ -121,6 +121,10 @@ input[type='number'] {
     flex-basis: 33.33%;
 }
 
+#randomize input[type="submit"] {
+    font-size: 1.1rem;
+}
+
 .spacer {
     flex-grow: 1;
 }
