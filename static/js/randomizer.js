@@ -116,6 +116,7 @@
         let count = Number(data.get('n'))
         let eventCount = Number(data.get('e'))
         let landmarkCount = Number(data.get('l'))
+        let projectCount = Number(data.get('p'))
         let sets = data.getAll('s')
         let counts = data.has('c') ? data.getAll('c').map(c => Number(c)) : []
         let exclusions = data.has('x') ? data.getAll('x') : []
@@ -164,6 +165,7 @@
         }
         let events = getNonCards(dominion.events, eventCount)
         let landmarks = getNonCards(dominion.landmarks, landmarkCount)
+        let projects = getNonCards(dominion.projects, projectCount)
 
         cards.sort((c1, c2) => {
             if (c1.set === c2.set) {
@@ -175,9 +177,11 @@
         let cardsDiv = $('#cards').empty()
         let eventsDiv = $('#events').empty()
         let landmarksDiv = $('#landmarks').empty()
+        let projectsDiv = $('#projects').empty()
         cards.forEach(card => addCard(card.name, cardsDiv))
         events.forEach(card => addCard(card, eventsDiv))
         landmarks.forEach(card => addCard(card, landmarksDiv))
+        projects.forEach(card => addCard(card, projectsDiv))
     }
 
     function addCard(cardName, container) {

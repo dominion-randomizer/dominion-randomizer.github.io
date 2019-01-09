@@ -33,15 +33,22 @@
     
                 <fieldset id='amounts'>
                     <legend>Card Amounts</legend>
-                    <label>
-                        Cards <input type='number' name='n' value='10' min='1' max='20'>
-                    </label>
-                    <label>
-                        Events <input type='number' name='e' value='0' min='0' max='10'>
-                    </label>
-                    <label>
-                        Landmarks <input type='number' name='l' value='0' min='0' max='10'>
-                    </label>
+                    <div>
+                        <label>
+                            Cards <input type='number' name='n' value='10' min='1' max='20'>
+                        </label>
+                        <label>
+                            Events <input type='number' name='e' value='0' min='0' max='10'>
+                        </label>
+                    </div>
+                    <div>
+                        <label>
+                            Landmarks <input type='number' name='l' value='0' min='0' max='10'>
+                        </label>
+                        <label>
+                            Projects <input type='number' name='p' value='0' min='0' max='10'>
+                        </label>
+                    </div>
                 </fieldset>
 
                 <fieldset id='include'>
@@ -75,6 +82,7 @@
                 <div id='cards' class='container card-container'></div>
                 <div id='events' class='container non-card-container'></div>
                 <div id='landmarks' class='container non-card-container'></div>
+                <div id='projects' class='container non-card-container'></div>
             </main>
         </div>
     </body>

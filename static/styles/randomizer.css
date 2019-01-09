@@ -43,7 +43,7 @@ fieldset {
     padding-bottom: 1rem;
 }
 
-fieldset :not(legend) {
+fieldset > :not(legend) {
     font-size: 0.9em;
 }
 
@@ -62,8 +62,15 @@ input[type='number'] {
 }
 
 #amounts label {
-    margin-left: 0.2rem;
-    margin-right: 0.2rem;
+    margin: 0.1rem 0.2rem;
+    text-align: right;
+    width: 100%;
+}
+
+#amounts div {
+    display: flex;
+    justify-content: space-around;
+    padding-right: 10%;
 }
 
 #sets {
