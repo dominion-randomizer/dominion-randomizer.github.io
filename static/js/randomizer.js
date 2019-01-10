@@ -224,7 +224,10 @@
     function addCard(cardName, container) {
         let card = $('<img>')
         let encodedName = cardName.replace(/ /g, '_').replace('/', '_').replace(/'/g, '%27')
-        card.attr('src', encodeURI('static/cards/' + encodedName + '.jpg'))
+        let hiRes = encodeURI('static/cards/' + encodedName + '.jpg')
+        let lowRes = encodeURI('static/cards/' + encodedName + '.small.jpg')
+        card.css('background', 'url(' + lowRes + ') no-repeat')
+        card.attr('src', hiRes)
         card.attr('alt', cardName)
         container.append(card)
     }
