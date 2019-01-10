@@ -226,9 +226,11 @@
         let encodedName = cardName.replace(/ /g, '_').replace('/', '_').replace(/'/g, '%27')
         let hiRes = encodeURI('static/cards/' + encodedName + '.jpg')
         let lowRes = encodeURI('static/cards/' + encodedName + '.small.jpg')
-        card.css('background', 'url(' + lowRes + ') no-repeat')
-        card.attr('src', hiRes)
+        card.attr('src', lowRes)
         card.attr('alt', cardName)
+        let hiResImage = new Image()
+        hiResImage.onload = () => card.attr('src', hiResImage.src)
+        hiResImage.src = hiRes
         container.append(card)
     }
 
