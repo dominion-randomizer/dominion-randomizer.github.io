@@ -238,30 +238,32 @@
     }
 
     function addGameSet(set) {
-        if ($('input[name="s"][value="' + set + '"]').length == 0) {
-            let mode = $('input[name="mode"]:checked').val()
-            let setDiv = $('<div>').addClass('set')
-            
-            if (dominion.cards['Promo'].some(card => card.name === set)) {
-                set += '*'
-            }
-            let setLabel = $('<span>').text(set)
-            setDiv.append(setLabel)
-    
-            let setInput = $('<input>').attr('name', 's').attr('type', 'hidden').val(set)
-            setDiv.append(setInput)
-    
-            let setCount = buildDistributionInput('Count', 'c', mode == 'counts')
-            setDiv.append(setCount)
-            let setWeight = buildDistributionInput('Weight', 'w', mode == 'weights')
-            setDiv.append(setWeight)
-    
-            let spacer = $('<div>').addClass('spacer')
-            setDiv.append(spacer)
-    
-            addRemoveButton(setDiv)
-            $('#sets').append(setDiv)
+        let option = $('#set-select option[value="' + set + '"]')
+        option.attr('disabled', true)
+        $('#set-select').prop('selectedIndex', 0)
+
+        let mode = $('input[name="mode"]:checked').val()
+        let setDiv = $('<div>').addClass('set')
+        
+        if (dominion.cards['Promo'].some(card => card.name === set)) {
+            set += '*'
         }
+        let setLabel = $('<span>').text(set)
+        setDiv.append(setLabel)
+
+        let setInput = $('<input>').attr('name', 's').attr('type', 'hidden').val(set)
+        setDiv.append(setInput)
+
+        let setCount = buildDistributionInput('Count', 'c', mode == 'counts')
+        setDiv.append(setCount)
+        let setWeight = buildDistributionInput('Weight', 'w', mode == 'weights')
+        setDiv.append(setWeight)
+
+        let spacer = $('<div>').addClass('spacer')
+        setDiv.append(spacer)
+
+        addRemoveButton(setDiv, () => option.attr('disabled', false))
+        $('#sets').append(setDiv)
     }
 
     function buildDistributionInput(labelName, name, enabled) {
@@ -274,8 +276,13 @@
         return label
     }
 
-    function addRemoveButton(parentDiv) {
-        let button = $('<button>').attr('type', 'button').text('Remove').on('click', () => parentDiv.remove())
+    function addRemoveButton(parentDiv, callback) {
+        let button = $('<button>').attr('type', 'button').text('Remove').on('click', () => {
+            parentDiv.remove()
+            if (callback) {
+                callback()
+            }
+        })
         parentDiv.append(button)
     }
 
