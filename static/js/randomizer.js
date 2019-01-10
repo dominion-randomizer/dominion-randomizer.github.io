@@ -143,13 +143,6 @@
             })
         }
         let promoCards = []
-        // sets = sets.filter(set => {
-        //     if (set.endsWith('*')) {
-        //         promoCards.push(set.substring(0, set.length - 1))
-        //         return false
-        //     }
-        //     return true
-        // })
         let completeSets = sets.filter(set => {
             if (set.endsWith('*')) {
                 promoCards.push(set.substring(0, set.length - 1))
@@ -184,6 +177,17 @@
                     return 0
                 })
                 cards.push(...getWeightedSample(possibleCards, weights, count))
+            }
+        }
+
+        // replace the last non-Looter card with Ruins
+        if (cards.some(card => card.types.includes('Looter'))) {
+            let replaced = false
+            for (let i = cards.length - 1; i >= 0 && !replaced; i--) {
+                if (!cards[i].types.includes('Looter')) {
+                    cards[i] = {'name': 'Survivors', 'set': 'Dark Ages', 'types': ['Action', 'Ruins']}
+                    replaced = true
+                }
             }
         }
 
