@@ -3,55 +3,66 @@
     
     let dominion;
     $(window).on('load', function() {
-        loadDominionData()
+        let mainForm = document.getElementById('randomize')
+        FormPersistence.persist(mainForm)
+        loadDominionData().then(_ => {
+            // need to ensure dominion data is loaded before populating form
+            FormPersistence.load(mainForm, false, {
+                's': (_, value) => addGameSet(value),
+                'i': (_, value) => addFilteredCard(value, true),
+                'x': (_, value) => addFilteredCard(value, false)
+            })
+        })
         $('#set-select').on('change', doAddGameSet)
         $('input[name="mode"]').on('click', updateDistributionVisibility)
         $('#include button').on('click', doAddFilteredCard)
         $('#exclude button').on('click', doAddFilteredCard)
         //$('fieldset:not(#sets) :not(legend)').hide()
         $('fieldset:not(#sets) legend').on('click', toggleFieldset)
-        let mainForm = document.getElementById('randomize')
-        FormPersistence.persist(mainForm)
-        FormPersistence.load(mainForm, false, {
-            's': (_, value) => addGameSet(value),
-            'i': (_, value) => addFilteredCard(value, true),
-            'x': (_, value) => addFilteredCard(value, false)
-        })
         $('#randomize').on('submit', submitForm)
     })
     
     function loadDominionData() {
-        $.getJSON('static/dominion.json', (json) => {
-            dominion = json
-            dominion.allCards = []
-            // build inclusion/exclusion options
-            let options = []
-            let include = $('#include-randomizers')
-            let exclude = $('#exclude-randomizers')
-            $.each(dominion.cards, (set, cards) => {
-                $.each(cards, (_, card) => {
-                    card.set = set
-                    dominion.allCards.push(card)
-                    // skip duplicate entries on multi-edition sets
-                    if (!options.includes(card.name)) {
-                        $('<option>').val(card.name).appendTo(include)
-                        $('<option>').val(card.name).appendTo(exclude)
-                        options.push(card.name)
+        return fetch('static/dominion.json')
+            .then(response => response.json())
+            .then(json => {
+                dominion = json
+                dominion.allCards = []
+                // build inclusion/exclusion options
+                let options = []
+                let include = $('#include-randomizers')
+                let exclude = $('#exclude-randomizers')
+                $.each(dominion.cards, (set, cards) => {
+                    $.each(cards, (_, card) => {
+                        card.set = set
+                        dominion.allCards.push(card)
+                        // skip duplicate entries on multi-edition sets
+                        if (!options.includes(card.name)) {
+                            $('<option>').val(card.name).appendTo(include)
+                            $('<option>').val(card.name).appendTo(exclude)
+                            options.push(card.name)
+                        }
+                    })
+                })
+                // build set selection options
+                let select = $('#set-select')
+                $.each(dominion.sets, (_, set) => {
+                    if (set === 'Promo') {
+                        let group = $('<optgroup>').attr('label', set).appendTo(select)
+                        $.each(dominion.cards[set], (_, card) => {
+                            $('<option>').val(card.name).text(card.name).appendTo(group)
+                        })
+                    } else {
+                        $('<option>').val(set).text(set).appendTo(select)
                     }
                 })
+                // build type filter checkbox options
+                let typeDiv = $('#types')
+                $.each(dominion.types, (_, type) => {
+                    let label = $('<label>').text(' ' + type).appendTo(typeDiv)
+                    $('<input>').attr('type', 'checkbox').attr('name', 'f').val(type).prependTo(label)
+                })
             })
-            // build set selection options
-            let select = $('#set-select')
-            $.each(dominion.sets, (_, set) => {
-                $('<option>').val(set).text(set).appendTo(select)
-            })
-            // build type filter checkbox options
-            let typeDiv = $('#types')
-            $.each(dominion.types, (_, type) => {
-                let label = $('<label>').text(' ' + type).appendTo(typeDiv)
-                $('<input>').attr('type', 'checkbox').attr('name', 'f').val(type).prependTo(label)
-            })
-        })
     }
     
     // via https://stackoverflow.com/a/11935263/1247781
@@ -101,7 +112,7 @@
         if (checkForm()) {
             randomize()
         }
-        return false
+        return false  // stay on the current page
     }
 
     function checkForm() {
@@ -131,10 +142,24 @@
                 }
             })
         }
+        let promoCards = []
+        // sets = sets.filter(set => {
+        //     if (set.endsWith('*')) {
+        //         promoCards.push(set.substring(0, set.length - 1))
+        //         return false
+        //     }
+        //     return true
+        // })
+        let completeSets = sets.filter(set => {
+            if (set.endsWith('*')) {
+                promoCards.push(set.substring(0, set.length - 1))
+                return false
+            }
+            return true
+        })
 
-        let canPickCard = (card) => sets.includes(card.set) &&
-            !exclusions.includes(card.name) &&
-            !cards.includes(card) &&
+        let canPickCard = (card) => (completeSets.includes(card.set) || promoCards.includes(card.name)) &&
+            !exclusions.includes(card.name) && !cards.includes(card) &&
             !filterTypes.some(t => card.types.includes(t))
 
         let mode = data.get('mode')
@@ -149,7 +174,15 @@
                 cards.push(...getRandomSample(possibleCards, count))
             } else if (mode === 'weights') {
                 let setWeights = data.getAll('w').map(w => Number(w))
-                let weights = possibleCards.map(card => setWeights[sets.indexOf(card.set)])
+                let weights = possibleCards.map(card => {
+                    for (let i = 0; i < sets.length; i++) {
+                        // handle promo cards (e.g. named Black Market*)
+                        if (sets[i] === card.set || sets[i].startsWith(card.name)) {
+                            return setWeights[i]
+                        }
+                    }
+                    return 0
+                })
                 cards.push(...getWeightedSample(possibleCards, weights, count))
             }
         }
@@ -196,7 +229,7 @@
         let select = $('#set-select')
         let selected = select.find('option[value]:selected') 
         if (selected.length > 0) {
-            addGameSet(selected.val())
+            addGameSet(selected.text())
         }
     }
 
@@ -204,7 +237,10 @@
         if ($('input[name="s"][value="' + set + '"]').length == 0) {
             let mode = $('input[name="mode"]:checked').val()
             let setDiv = $('<div>').addClass('set')
-    
+            
+            if (dominion.cards['Promo'].some(card => card.name === set)) {
+                set += '*'
+            }
             let setLabel = $('<span>').text(set)
             setDiv.append(setLabel)
     
