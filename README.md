@@ -2,6 +2,8 @@ An online Dominion kingdom randomizer.
 
 Looking for a command-line Dominion randomizer? See https://github.com/FThompson/DominionRandomizer
 
+Uses [`FormPersistence.js`](https://github.com/FThompson/FormPersistence.js) for retaining form values across sessions.
+
 ## TODO ##
 * Handling of bad form input
 * Young Witch support (add an 11th card costing between 2-3)
