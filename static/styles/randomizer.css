@@ -63,6 +63,11 @@ input[list] {
     margin-bottom: 0.4rem;
 }
 
+legend {
+    text-align: center;
+    width: 100%;
+}
+
 fieldset {
     border: 0;
     padding-bottom: 1rem;
