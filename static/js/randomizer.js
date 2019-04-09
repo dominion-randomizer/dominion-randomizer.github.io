@@ -3,11 +3,10 @@
     
     let dominion;
     $(window).on('load', function() {
-        let mainForm = document.getElementById('randomize')
-        FormPersistence.persist(mainForm)
         loadDominionData().then(_ => {
             // need to ensure dominion data is loaded before populating form
-            FormPersistence.load(mainForm, false, {
+            let mainForm = document.getElementById('randomize')
+            FormPersistence.persist(mainForm, false, true, {
                 's': (_, value) => addGameSet(value),
                 'i': (_, value) => addFilteredCard(value, true),
                 'x': (_, value) => addFilteredCard(value, false)

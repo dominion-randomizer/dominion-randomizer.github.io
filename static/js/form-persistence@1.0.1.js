@@ -1,30 +1,43 @@
 /**
  * This module implements form persistence across sessions via local storage.
- * * Register a form for persistence with `FormPersistence#persist(form)`.
- * * Save a form to local storage with `FormPersistence#save(form)`.
- * * Load a saved form (e.g. at window load time) with `FormPersistence#load(form, valueFunctions)`.
+ * * Register a form for persistence with `FormPersistence#persist(form[, useSessionStorage[, saveOnSubmit]])`.
+ * * Save a form to local storage with `FormPersistence#save(form[, useSessionStorage])`.
+ * * Load a saved form (e.g. at window load time) with `FormPersistence#load(form[, useSessionStorage[, valueFunctions]])`.
+ * * Clear saved form data with `FormPersistence#clearStorage(form[, useSessionStorage])`.
+ * * Serialize form data to an object with `FormPersistence#serialize(form)`.
+ * * Deserialize a data object into a form with `FormPersistence#deserialize(form, data[, valueFunctions])`.
  * 
  * Uses module pattern per https://yuiblog.com/blog/2007/06/12/module-pattern/.
  * See https://github.com/FThompson/FormPersistence.js
  */
 const FormPersistence = (() => {
     /**
-     * Registers the given form for persistence and saves its data to local or session storage upon submission.
+     * Registers the given form for persistence by saving its data to local or session storage.
+     * Form data will be saved upon page refresh and optionally upon form submission.
+     * Saved form data will be loaded upon calling this function, typically on page load.
      * 
      * @param {HTMLFormElement} form              The form to make persistent.
-     * @param {Boolean}         useSessionStorage Uses session storage if true, local storage if false/missing.
+     * @param {Boolean}         useSessionStorage Uses session storage if `true`, local storage if `false`. Default `false`.
+     * @param {Boolean}         saveOnSubmit      Save the form data upon submit if `true`, otherwise `false`. Default `false`.
      */
-    function persist(form, useSessionStorage) {
-        form.addEventListener('submit', () => save(form, useSessionStorage))
+    function persist(form, useSessionStorage = false, saveOnSubmit = false, valueFunctions) {
+        load(form, useSessionStorage, valueFunctions)
+        let saveForm = () => save(form, useSessionStorage)
+        window.addEventListener('beforeunload', saveForm)
+        if (!saveOnSubmit) {
+            form.addEventListener('submit', () => {
+                window.removeEventListener('beforeunload', saveForm)
+                clearStorage(form, useSessionStorage)
+            })
+        }
     }
 
     /**
-     * Saves the given form to local or session storage.
+     * Serializes the given form into an object, excluding password and file inputs.
      * 
-     * @param {HTMLFormElement} form              The form to serialize to local storage.
-     * @param {Boolean}         useSessionStorage Uses session storage if true, local storage if false/missing.
+     * @param {HTMLFormElement} form The form to serialize.
      */
-    function save(form, useSessionStorage) {
+    function serialize(form) {
         let data = {}
         let formData = new FormData(form)
         let passwordNames = getPasswordInputNames(form)
@@ -36,6 +49,17 @@ const FormPersistence = (() => {
                 }
             }
         }
+        return data
+    }
+
+    /**
+     * Saves the given form to local or session storage.
+     * 
+     * @param {HTMLFormElement} form              The form to serialize to local storage.
+     * @param {Boolean}         useSessionStorage Uses session storage if `true`, local storage if `false`. Default `false`.
+     */
+    function save(form, useSessionStorage = false) {
+        let data = serialize(form)
         let storage = useSessionStorage ? sessionStorage : localStorage
         storage.setItem(getStorageKey(form), JSON.stringify(data))
     }
@@ -52,35 +76,46 @@ const FormPersistence = (() => {
     }
 
     /**
+     * Loads a given form by deserializing given data, optionally with given special value handling functions.
+     * 
+     * @param {HTMLFormElement} form  The form to deserialize data into.
+     * @param {Object} data           The data object to deserialize into the form.
+     * @param {Object} valueFunctions The special value functions, like `name: fn(form, value)`.
+     */
+    function deserialize(form, data, valueFunctions) {
+        // apply given value functions first
+        let speciallyHandled = []
+        if (valueFunctions !== undefined) {
+            speciallyHandled = applySpecialHandlers(data, form, valueFunctions)
+        }
+        // fill remaining values normally
+        let checkedBoxes = []
+        for (let name in data) {
+            if (!speciallyHandled.includes(name)) {
+                let inputs = getDataElements(form.id, name)
+                inputs.forEach((input, i) => {
+                    applyValues(input, data[name], i, checkedBoxes)
+                })
+            }
+        }
+        // unchecked boxes are not included in form data, handle them separately
+        uncheckBoxes(form, checkedBoxes)
+    }
+
+    /**
      * Loads a given form from local or session storage, optionally with given special value handling functions.
      * Does nothing if no saved values are found.
      * 
      * @param {HTMLFormElement} form              The form to load saved values into.
-     * @param {Boolean}         useSessionStorage Uses session storage if true, local storage if false/missing.
+     * @param {Boolean}         useSessionStorage Uses session storage if `true`, local storage if `false`. Default `false`.
      * @param {Object}          valueFunctions    The special value functions, like `name: fn(form, value)`.
      */
-    function load(form, useSessionStorage, valueFunctions) {
+    function load(form, useSessionStorage = false, valueFunctions) {
         let storage = useSessionStorage ? sessionStorage : localStorage
         let json = storage.getItem(getStorageKey(form))
         if (json) {
             let data = JSON.parse(json)
-            // apply given value functions first
-            let speciallyHandled = []
-            if (valueFunctions !== undefined) {
-                speciallyHandled = applySpecialHandlers(data, form, valueFunctions)
-            }
-            // fill remaining values normally
-            let checkedBoxes = []
-            for (let name in data) {
-                if (!speciallyHandled.includes(name)) {
-                    let inputs = getDataElements(form.id, name)
-                    inputs.forEach((input, i) => {
-                        applyValues(input, data[name], i, checkedBoxes)
-                    })
-                }
-            }
-            // unchecked boxes are not included in form data, handle them separately
-            uncheckBoxes(form, checkedBoxes)
+            deserialize(form, data, valueFunctions)
         }
     }
 
@@ -88,11 +123,15 @@ const FormPersistence = (() => {
      * Clears a given form's data from local or session storage.
      * 
      * @param {HTMLFormElement} form              The form to clear stored data for.
-     * @param {Boolean}         useSessionStorage Uses session storage if true, local storage if false/missing.
+     * @param {Boolean}         useSessionStorage Uses session storage if `true`, local storage if `false`. Default `false`.
      */
-    function clearStorage(form, useSessionStorage) {
+    function clearStorage(form, useSessionStorage = false) {
         let storage = useSessionStorage ? sessionStorage : localStorage
         storage.removeItem(getStorageKey(form))
+        console.log('cleared')
+        
+        let json = storage.getItem(getStorageKey(form))
+        console.log(json)
     }
 
     /**
@@ -209,6 +248,8 @@ const FormPersistence = (() => {
         persist: persist,
         load: load,
         save: save,
-        clearStorage: clearStorage
+        clearStorage: clearStorage,
+        serialize: serialize,
+        deserialize: deserialize
     }
 })()
